@@ -1,0 +1,28 @@
+{
+  "name": "mailbox",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mailbox.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.4.2",
+    "aws-sdk": "^2.2.6",
+    "google-auth-library": "^0.9.6",
+    "googleapis": "^2.1.5",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-aws-lambda": "^0.10.0"
+  },
+  "bundledDependencies": [
+    "async",
+    "google-auth-library",
+    "googleapis",
+    "underscore"
+  ]
+}
