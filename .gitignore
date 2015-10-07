@@ -6,3 +6,4 @@ dist
 dist/*
 .DS_Store
 
+SECRET_*

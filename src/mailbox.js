@@ -7,6 +7,8 @@ var _ = require('underscore');
 var gmail = google.gmail('v1');
 var auth;
 var AWS = require('aws-sdk');
+var spark = require('spark');
+
 var previousDigest;
 var digest;
 var credentials;
@@ -26,14 +28,18 @@ var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 // var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 //     process.env.USERPROFILE) + '/.credentials/';
 var CONFIG_DIR = process.cwd() + "/config/";
-var TOKEN_PATH = CONFIG_DIR + 'tokens.json';
-var GOOGLE_SECRET_PATH = CONFIG_DIR + 'google_client_secret.json';
+var TOKEN_PATH = CONFIG_DIR + 'SECRET_google_access_tokens.json';
+var GOOGLE_SECRET_PATH = CONFIG_DIR + 'SECRET_google_client_tokens.json';
 
 
 var BUCKET_NAME = "com.elyandpilar.mailbox";
 var S3_KEY_NAME = "message-digest.json";
 
 AWS.config.region = 'us-west-2';
+
+
+var DEVICE_ID = "3b003d001547343433313338"
+var DEVICE_ACCESS_TOKEN = "8a3fdd6091ca0e6d498e599556b2f4a71657beea";
 
 
 exports.handler = function(event,context) {
@@ -44,6 +50,7 @@ exports.handler = function(event,context) {
     loadGoogleTokens,
 //    loadPreviousDigest,
     listUnreadEmail,
+    updateFlag,
   ],function(err) {
       console.log("completed with err:",err);
         context.done(err,digest);
@@ -55,7 +62,6 @@ function loadClientSecrets(callback) {
   fs.readFile(GOOGLE_SECRET_PATH, function(err, content) {        
     if (err) return callback(err);
     credentials = JSON.parse(content);
-    console.log("client secrets:",credentials);
     callback();        
   });
 }
@@ -78,7 +84,6 @@ function loadGoogleTokens(callback) {
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) return callback(null);
     oauth2Client.credentials = JSON.parse(token);
-    console.log("google tokens:",oauth2Client.credentials);
     auth = oauth2Client;
     callback();
   });
@@ -117,11 +122,10 @@ function listUnreadEmail(callback) {
     if (err) return callback(err);
     var messages = response.messages;
     digest = [];
-    if (messages.length == 0) {
+    if (messages == null || messages.length == 0) {
       console.log('No messages found.');
       return callback();
     } else {
-      console.log('messages:');
       async.each(messages,function(m,cb) {
         getMessageDetails(m,function(full) {
           digest.push(full);
@@ -131,6 +135,29 @@ function listUnreadEmail(callback) {
         return callback(err);
       });
     }
+  });
+}
+
+function updateFlag(callback) {
+  console.log("updating flag");
+
+  if(digest.length) {
+    method = "setSignal";
+  }
+  else {
+    method = "clearSignal";
+  }
+
+  spark.login({accessToken: DEVICE_ACCESS_TOKEN},function(err) {
+    if(err) return callback(err);
+    spark.getDevice(DEVICE_ID, function(err, device) {
+      if(err) return callback(err);
+      device.callFunction(method,"",function(err) {
+        if(err) return callback(err);
+        console.log("success with",method);
+        callback();
+      })
+    });
   });
 }
 

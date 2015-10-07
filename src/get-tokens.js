@@ -6,8 +6,8 @@ var SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 // var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 //     process.env.USERPROFILE) + '/.credentials/';
 var CONFIG_DIR = process.cwd() + "/config/";
-var TOKEN_PATH = CONFIG_DIR + 'tokens.json';
-var GOOGLE_SECRET_PATH = CONFIG_DIR + 'google_client_secret.json';
+var TOKEN_PATH = CONFIG_DIR + 'SECRET_google_access_tokens.json';
+var GOOGLE_SECRET_PATH = CONFIG_DIR + 'SECRET_google_client_tokens.json';
 
 // Load client secrets from a local file.
 fs.readFile(GOOGLE_SECRET_PATH, function processClientSecrets(err, content) {
