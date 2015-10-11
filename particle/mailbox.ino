@@ -1,3 +1,4 @@
+#include "ScreenDriver.h"
 Servo myservo;  // create servo object to control a servo
 
 int ledPin = D7; // Instead of writing D7 over and over again, we'll write led2
@@ -8,6 +9,8 @@ int buttonState = 0;
 int previousButtonState = 0;
 unsigned long startTime = 0;
 unsigned long PING_TIMEOUT = 20*1000;
+
+ScreenDriver screen;
 void setup()
 {
     Particle.publish("setup begin");
@@ -20,6 +23,7 @@ void setup()
 
     myservo.attach(servoPin);  // attaches the servo on the A0 pin to the servo object
 
+    screen.init();
     setFlag(false);
     startTime = millis();
 }
@@ -28,6 +32,8 @@ void loop()
 {
     checkIfButtonChanged();
     tryToPingServer();
+    screen.setState(buttonState == LOW);
+    screen.pump();
 }
 
 void tryToPingServer() {
@@ -49,7 +55,6 @@ void checkIfButtonChanged() {
     if(buttonState != previousButtonState) {
         Particle.publish("button state changed");
         previousButtonState = buttonState;
-        setFlag(false);
     }
 }
 
