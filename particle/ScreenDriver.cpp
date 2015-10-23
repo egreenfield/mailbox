@@ -12,14 +12,15 @@ Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
 
-char message[] = "this is a long message";
 #define FONT_SIZE 1
 #define CHAR_PIXEL_SIZE 3*FONT_SIZE
 #define VELOCITY 4
 
 
 ScreenDriver::ScreenDriver()
-:_on(false){}
+:_on(false)
+,_text(NULL)
+{}
 ScreenDriver::~ScreenDriver() {}
 
 void ScreenDriver::init(void) {
@@ -35,8 +36,35 @@ void ScreenDriver::init(void) {
   display->setTextWrap(false);
   _display = display;
   _currentPosition    = display->width();
-  _text = message;
-  _textWidth = CHAR_PIXEL_SIZE * 2 * strlen(message); // 12 = 6 pixels/character * text size 2
+  _text = new String("hello, world");
+  _textWidth = CHAR_PIXEL_SIZE * 2 * _text->length(); // 12 = 6 pixels/character * text size 2
+}
+
+void ScreenDriver::setText(const String& text)
+{
+  delete _text;
+  _text = new String(text);
+  _textWidth = CHAR_PIXEL_SIZE * 2 * _text->length(); // 12 = 6 pixels/character * text size 2
+
+  bool state = getState();
+  setState(false);
+  setState(true);
+}
+
+
+void ScreenDriver::parse(const String& msg) {
+  int stop = msg.indexOf('\t');
+  int msgCount = atoi(msg.substring(0,stop));
+  int start = stop+1;
+  for(int i=0;i<msgCount;i++) {
+    stop = msg.indexOf('\t',start);
+    String subject = msg.substring(start,stop);
+    start = stop+1;
+    stop = msg.indexOf('\t',start);
+    String from = msg.substring(start,stop);
+    start = stop+1;
+    setText(subject);
+  }
 }
 void ScreenDriver::setState(bool on) {
   Adafruit_SSD1306* display = (Adafruit_SSD1306*)_display;
@@ -54,7 +82,7 @@ void ScreenDriver::pump() {
   display->clearDisplay();
   if(_on) {
     display->setCursor(_currentPosition, 20);
-    display->print(_text);
+    display->print(*_text);
     _currentPosition -= VELOCITY;
     if(_currentPosition < -_textWidth)
       _currentPosition = display->width();

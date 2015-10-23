@@ -44,7 +44,7 @@ var DEVICE_ACCESS_TOKEN = "8a3fdd6091ca0e6d498e599556b2f4a71657beea";
 
 exports.handler = function(event,context) {
   // Load client secrets from a local file.
-  
+
   async.series([
     loadClientSecrets,
     loadGoogleTokens,
@@ -53,16 +53,16 @@ exports.handler = function(event,context) {
     updateFlag,
   ],function(err) {
       console.log("completed with err:",err);
-        context.done(err,digest);
+        context.done(err,JSON.stringify(digest));
   })
 }
 
 function loadClientSecrets(callback) {
   console.log("loading client secrets");
-  fs.readFile(GOOGLE_SECRET_PATH, function(err, content) {        
+  fs.readFile(GOOGLE_SECRET_PATH, function(err, content) {
     if (err) return callback(err);
     credentials = JSON.parse(content);
-    callback();        
+    callback();
   });
 }
 /**
@@ -97,14 +97,14 @@ function getMessageDetails(message,callback) {
     id:message.id
   },function(err,fullMessage) {
     if(err) return callback(err);
-    var foundIt = _.find(fullMessage.payload.headers,function(header) {
-      if(header.name == "From") {
-        callback({snippet: fullMessage.snippet,from:header.value});
-        return true;
-      }
-    });
-    if(!foundIt)
-      callback(null);
+    var headers = _.reduce(fullMessage.payload.headers,function(o,header) {
+        o[header.name] = header.value;
+        return o;
+      },
+      {}
+    );
+//    console.log("headers is",JSON.stringify(headers,null,'\t'));
+    return callback(null,headers);
   });
 }
 /**
@@ -127,7 +127,7 @@ function listUnreadEmail(callback) {
       return callback();
     } else {
       async.each(messages,function(m,cb) {
-        getMessageDetails(m,function(full) {
+        getMessageDetails(m,function(err,full) {
           digest.push(full);
           cb();
         })
@@ -137,26 +137,55 @@ function listUnreadEmail(callback) {
     }
   });
 }
-
+function cleanTabs(str) {
+  return str.replace("\t"," ");
+}
 function updateFlag(callback) {
   console.log("updating flag");
+  var method;
+  var params;
 
-  if(digest.length) {
-    method = "setSignal";
-  }
-  else {
-    method = "clearSignal";
-  }
 
   spark.login({accessToken: DEVICE_ACCESS_TOKEN},function(err) {
     if(err) return callback(err);
     spark.getDevice(DEVICE_ID, function(err, device) {
       if(err) return callback(err);
-      device.callFunction(method,"",function(err) {
-        if(err) return callback(err);
-        console.log("success with",method);
-        callback();
-      })
+
+      if(digest.length) {
+        method = "setMessage";
+        params = "" + digest.length + "\t";
+        params = _.reduce(digest,function(params,message) {
+          return params + message.Subject + "\t" + message.From + "\t";
+        },params);
+        var pStack = [];
+        //console.log('splitting params:',params);
+        while(params.length) {
+          pStack.push(params.slice(0,60))
+          params = params.slice(60);
+        }
+        //console.log("split into",pStack);
+        device.callFunction("clearMsg","",function(err) {
+          if(err) return callback(err);
+          async.each(pStack,function(paramFragment,callback) {
+            device.callFunction("appendMsg",paramFragment,function(err) {
+              callback(err);
+            });
+          },function(err) {
+            if(err) return callback(err);
+            device.callFunction("endMsg","",function(err) {
+              callback(err);
+            });
+          });
+        });
+      }
+      else {
+        device.callFunction("clearSignal","",function(err) {
+          if(err) return callback(err);
+          console.log("success with",method);
+          callback();
+        })
+      }
+
     });
   });
 }

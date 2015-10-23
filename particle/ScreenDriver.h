@@ -1,18 +1,21 @@
 #ifndef _SCREEN_DRIVER_H_
 #define _SCREEN_DRIVER_H_
 
+class String;
 
 class ScreenDriver {
 public:
   ScreenDriver();
   ~ScreenDriver();
 
-  void setText(char* text);
+  void setText(const String& text);
+  void parse(const String& text);
   void init();
   void pump();
   void setState(bool on);
+  bool getState() {return _on;}
 private:
-  char* _text;
+  String* _text;
   int _currentPosition;
   int _textWidth;
   void* _display;

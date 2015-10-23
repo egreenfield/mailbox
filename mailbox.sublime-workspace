@@ -1,0 +1,282 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"pre",
+				"previousDigest"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"settings":
+			{
+				"buffer_size": 0,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/egreenfi/dev/mailbox"
+	],
+	"file_history":
+	[
+		"/Users/egreenfi/dev/mailbox/.gitignore",
+		"/Users/egreenfi/scripts/bash-setup.sh",
+		"/Users/egreenfi/dev/mailbox/gruntfile.js",
+		"/Users/egreenfi/dev/mailbox/.npmignore",
+		"/Users/egreenfi/dev/mailbox/package.json",
+		"/Users/egreenfi/dev/mailbox/config/tokens.json",
+		"/Users/egreenfi/dev/mailbox/particle/mailbox.ino",
+		"/Users/egreenfi/dev/mailbox/src/mailbox.js",
+		"/Users/egreenfi/dev/mailbox/test/servoTest.html",
+		"/Users/egreenfi/dev/mailbox/test/message-digest.json",
+		"/Users/egreenfi/dev/mailbox/src/get-tokens.js",
+		"/Users/egreenfi/.bashrc",
+		"/Users/egreenfi/dev/mailbox/config/google_client_secret.json",
+		"/Users/egreenfi/dev/mailbox/quickstart.js",
+		"/Users/egreenfi/dev/mailbox/test/event.json",
+		"/Users/egreenfi/dev/mailbox/client_secret.json",
+		"/Users/egreenfi/dev/mailbox/gmail-nodejs-quickstart.json",
+		"/Users/egreenfi/Downloads/anydo.widget/index.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/asana.widget/index.js",
+		"/Users/egreenfi/dev/mailbox/servoTest.html",
+		"/Users/egreenfi/dev/mailbox/mailbox.js",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/asana.widget/asana-task-list.js",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/asana.widget/index.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/todo-txt.widget/index.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/hcal.widget/index.js",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/ical.widget/iCalParser.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/timeinwords.widget/index.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/ical.widget/index.coffee",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/ical.widget/test.coffee",
+		"/Users/egreenfi/bash-setup.sh",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/ical.widget/test.coffee ",
+		"/Users/egreenfi/Library/Application Support/Übersicht/widgets/ical.widget/sample.txt",
+		"/Users/egreenfi/Dropbox/personal/todo/todo.cfg",
+		"/Users/egreenfi/scripts/bashrc"
+	],
+	"find":
+	{
+		"height": 23.0
+	},
+	"find_in_files":
+	{
+		"height": 93.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"PING_TIMEOUT",
+			"finishMessage",
+			"deviceid",
+			"console.lo",
+			"loadPreviousDigest",
+			"getMessageDetails",
+			"auth =",
+			"authorize",
+			"listUnreadEmail",
+			"authorize",
+			"clearFunc",
+			"setSignal",
+			"getpos",
+			"listUnreadEmail",
+			"getNewToken",
+			"SCOPES",
+			"readline",
+			"google.",
+			"google",
+			"googleAuth",
+			"gmail",
+			"SCOPES",
+			"storeToken",
+			"getNewToken",
+			"authorize",
+			"TOKEN_DI",
+			"TOKEN_PATH",
+			"listla",
+			"getmessage",
+			"get",
+			"oauth2Client",
+			"getNewToken(",
+			"oauth2Client",
+			"listLabels",
+			"authorize(",
+			"TOKEN_PA",
+			".crede",
+			"authorize",
+			"console.l",
+			"renderLine",
+			"getpo"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 0,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "mailbox.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
