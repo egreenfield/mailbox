@@ -29,7 +29,7 @@ void setup()
 
     screen.init();
     setFlag(false);
-    startTime = millis();
+    startTime = millis() - PING_TIMEOUT;
 }
 
 void loop()
@@ -78,6 +78,7 @@ void appendMessage(const String& message)
 
 void finishMessage()
 {
+  Particle.publish("finishing message",_message);
   screen.parse(_message);
 }
 void setMessage(const String& m)
@@ -90,7 +91,7 @@ void setMessage(const String& m)
 //--------------------------------------------------------------------------------
 
 int appendMessageP(String message) {
-  Particle.publish("append message: " + message);
+  Particle.publish("append message: ",message);
   appendMessage(message);
   return 0;
 }
@@ -104,8 +105,8 @@ int clearMessageP(String param) {
 
 int finishMessageP(String param) {
   Particle.publish("finish message",_message);
+  screen.parse(_message);
   setFlag(true);
-  finishMessage();
   return 0;
 }
 int setSignalP(String count) {

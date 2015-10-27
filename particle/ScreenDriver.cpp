@@ -16,59 +16,124 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define CHAR_PIXEL_SIZE 3*FONT_SIZE
 #define VELOCITY 4
 
+//------------------------------------------------------------------------------------------------
+//************************************************************************************************
+//------------------------------------------------------------------------------------------------
+struct Message
+{
+  String subject;
+  String sender;
+};
+
+//------------------------------------------------------------------------------------------------
+//************************************************************************************************
+//------------------------------------------------------------------------------------------------
+
+class ScreenLine
+{
+public:
+  ScreenLine();  
+  void init(Adafruit_SSD1306* display, int placement,const String& text);
+  void update();
+
+private:
+    String _text;    
+    int _width;
+    int _placement;
+    int _scrollPosition;
+    Adafruit_SSD1306* _display;
+};
+
+
+//------------------------------------------------------------------------------------------------
+
+ScreenLine::ScreenLine()
+{
+}
+
+void ScreenLine::init(Adafruit_SSD1306* display,int placememnt,const String& text)
+{
+  _text = text;
+  _placement = placememnt;
+  _display = display;
+  _width = CHAR_PIXEL_SIZE * 2 * _text.length(); // 12 = 6 pixels/character * text size 2
+  _scrollPosition    = _display->width();
+}
+
+void ScreenLine::update()
+{
+    _display->setCursor(_scrollPosition, 20);
+    _display->print(_text);
+    _scrollPosition -= VELOCITY;
+    if(_scrollPosition < -_width)
+      _scrollPosition = _display->width();
+}
+
+//------------------------------------------------------------------------------------------------
+//************************************************************************************************
+//------------------------------------------------------------------------------------------------
 
 ScreenDriver::ScreenDriver()
 :_on(false)
-,_text(NULL)
+,_lines(NULL)
+,_messages(NULL)
+,_lineCount(0)
 {}
-ScreenDriver::~ScreenDriver() {}
+
+ScreenDriver::~ScreenDriver() 
+{
+  delete [] _lines;
+  delete [] _messages;
+}
 
 void ScreenDriver::init(void) {
-  Adafruit_SSD1306* display = new Adafruit_SSD1306(OLED_RESET);
+  _display = new Adafruit_SSD1306(OLED_RESET);
 
   Serial.begin(9600);
 
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-  display->begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3D (for the 128x64)
+  _display->begin(SSD1306_SWITCHCAPVCC, SSD1306_I2C_ADDRESS);  // initialize with the I2C addr 0x3D (for the 128x64)
 
-  display->setTextSize(FONT_SIZE);
-  display->setTextColor(WHITE);
-  display->setTextWrap(false);
-  _display = display;
-  _currentPosition    = display->width();
-  _text = new String("hello, world");
-  _textWidth = CHAR_PIXEL_SIZE * 2 * _text->length(); // 12 = 6 pixels/character * text size 2
+  _display->setTextSize(FONT_SIZE);
+  _display->setTextColor(WHITE);
+  _display->setTextWrap(false);
 }
-
-void ScreenDriver::setText(const String& text)
-{
-  delete _text;
-  _text = new String(text);
-  _textWidth = CHAR_PIXEL_SIZE * 2 * _text->length(); // 12 = 6 pixels/character * text size 2
-
-  bool state = getState();
-  setState(false);
-  setState(true);
-}
-
 
 void ScreenDriver::parse(const String& msg) {
+  
+  Particle.publish(String("parsing"));
+
+  delete [] _messages; _messages  = NULL;
+  delete [] _lines; _lines = NULL;
+
+
   int stop = msg.indexOf('\t');
   int msgCount = atoi(msg.substring(0,stop));
+
+  _messages = new Message[msgCount];
+
   int start = stop+1;
   for(int i=0;i<msgCount;i++) {
     stop = msg.indexOf('\t',start);
-    String subject = msg.substring(start,stop);
+    _messages[i].subject = msg.substring(start,stop);
     start = stop+1;
     stop = msg.indexOf('\t',start);
-    String from = msg.substring(start,stop);
+    _messages[i].sender = msg.substring(start,stop);
     start = stop+1;
-    setText(subject);
+//    setText(_messages[i].subject);
   }
-}
-void ScreenDriver::setState(bool on) {
-  Adafruit_SSD1306* display = (Adafruit_SSD1306*)_display;
+  _lines = new ScreenLine[1];
+  Particle.publish(String("parsed: ") + _messages[0].subject);
 
+  _lines[0].init(_display,20,_messages[0].subject);
+  _lineCount = 1;
+
+  bool state = getState();
+  setState(false);
+  setState(state);
+}
+
+void ScreenDriver::setState(bool on) {
   if(_on != on) {
     if(on) {
         _currentPosition = 0;//display->width();
@@ -78,14 +143,12 @@ void ScreenDriver::setState(bool on) {
 
 }
 void ScreenDriver::pump() {
-  Adafruit_SSD1306* display = (Adafruit_SSD1306*)_display;
-  display->clearDisplay();
+  _display->clearDisplay();
   if(_on) {
-    display->setCursor(_currentPosition, 20);
-    display->print(*_text);
-    _currentPosition -= VELOCITY;
-    if(_currentPosition < -_textWidth)
-      _currentPosition = display->width();
+    for(int i=0;i<_lineCount;i++)
+    {
+      _lines[i].update();
+    }
   }
-  display->display();
+  _display->display();
 }

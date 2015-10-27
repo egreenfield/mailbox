@@ -53,7 +53,8 @@ exports.handler = function(event,context) {
     updateFlag,
   ],function(err) {
       console.log("completed with err:",err);
-        context.done(err,JSON.stringify(digest));
+//        context.done(err,JSON.stringify(digest));
+        context.done(err,true);
   })
 }
 
