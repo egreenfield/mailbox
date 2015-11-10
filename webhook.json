@@ -1,0 +1,11 @@
+{
+	"event": "ping-mailbox",
+	"url": "https://f81kqpkkn9.execute-api.us-west-2.amazonaws.com/prod/mailbox",
+	"requestType" : "GET",
+	"headers": null,
+	"query": null,
+	"responseTemplate": "{{{digest}}}",
+	"json": null,
+	"auth": null,
+	"mydevices": true
+}

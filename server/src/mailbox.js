@@ -11,6 +11,7 @@ var spark = require('spark');
 
 var previousDigest;
 var digest;
+var response;
 var credentials;
 
 /**
@@ -54,7 +55,7 @@ exports.handler = function(event,context) {
   ],function(err) {
       console.log("completed with err:",err);
 //        context.done(err,JSON.stringify(digest));
-        context.done(err,true);
+        context.done(err,{digest:response});
   })
 }
 
@@ -144,7 +145,6 @@ function cleanTabs(str) {
 function updateFlag(callback) {
   console.log("updating flag");
   var method;
-  var params;
 
 
   spark.login({accessToken: DEVICE_ACCESS_TOKEN},function(err) {
@@ -154,32 +154,14 @@ function updateFlag(callback) {
 
       if(digest.length) {
         method = "setMessage";
-        params = "" + digest.length + "\t";
-        params = _.reduce(digest,function(params,message) {
-          return params + message.Subject + "\t" + message.From + "\t";
-        },params);
-        var pStack = [];
-        //console.log('splitting params:',params);
-        while(params.length) {
-          pStack.push(params.slice(0,60))
-          params = params.slice(60);
-        }
-        //console.log("split into",pStack);
-        device.callFunction("clearMsg","",function(err) {
-          if(err) return callback(err);
-          async.each(pStack,function(paramFragment,callback) {
-            device.callFunction("appendMsg",paramFragment,function(err) {
-              callback(err);
-            });
-          },function(err) {
-            if(err) return callback(err);
-            device.callFunction("endMsg","",function(err) {
-              callback(err);
-            });
-          });
-        });
+        response = "" + digest.length + "\t";
+        response = _.reduce(digest,function(response,message) {
+          return response + message.Subject + "\t" + message.From + "\t";
+        },response) + '\t\t\t';
+        callback();
       }
       else {
+        response = '\t\t\t';
         device.callFunction("clearSignal","",function(err) {
           if(err) return callback(err);
           console.log("success with",method);

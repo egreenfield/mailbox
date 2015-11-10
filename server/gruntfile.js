@@ -20,6 +20,7 @@ module.exports = function(grunt) {
         default: {
             options: {
                 // Task-specific options go here.
+                timeout: 15
             },
             arn:"arn:aws:lambda:us-west-2:669276666408:function:CheckMailbox"
         }

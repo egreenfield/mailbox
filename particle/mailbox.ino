@@ -21,6 +21,8 @@ void setup()
     Particle.function("clearMsg",clearMessageP);
     Particle.function("appendMsg",appendMessageP);
 
+    Particle.subscribe("hook-response/ping-mailbox", mailboxPingResponse, MY_DEVICES);
+
     pinMode(ledPin,OUTPUT);
     digitalWrite(ledPin, HIGH);
     pinMode(buttonPin, INPUT);
@@ -66,6 +68,7 @@ void setFlag(bool up) {
     myservo.write(up? 91:0);
 }
 
+
 void clearMessage()
 {
   _message = "";
@@ -87,6 +90,29 @@ void setMessage(const String& m)
     appendMessage(m);
     finishMessage();
 }
+
+void mailboxPingResponse(const char * name,const char * data)
+{
+  String eventName(name);
+
+  if(eventName.endsWith("0"))  {
+    Particle.publish("first_response_clearing");
+    setFlag(true);
+    clearMessage();
+  }
+
+  String fragment(data);
+  appendMessage(fragment);
+  Particle.publish("appending_response",fragment);
+  if(fragment.endsWith("\t\t\t"))
+  {
+    screen.parse(_message);
+    Particle.publish("ending_response");
+
+    setFlag(true);
+  }
+}
+
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 

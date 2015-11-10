@@ -2,7 +2,7 @@
 
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
-
+#include "util.h"
 
 #define OLED_RESET D4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -15,15 +15,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define FONT_SIZE 1
 #define CHAR_PIXEL_SIZE 3*FONT_SIZE
 #define VELOCITY 4
+static const int kPauseTime = 2000;
 
-//------------------------------------------------------------------------------------------------
-//************************************************************************************************
-//------------------------------------------------------------------------------------------------
-struct Message
-{
-  String subject;
-  String sender;
-};
 
 //------------------------------------------------------------------------------------------------
 //************************************************************************************************
@@ -34,18 +27,26 @@ class ScreenLine
 public:
   ScreenLine();  
   void init(Adafruit_SSD1306* display, int placement,const String& text);
-  void update();
+  bool render();
+  bool advance();
+  void reset();
 
 private:
     String _text;    
     int _width;
     int _placement;
     int _scrollPosition;
+    int _leftBoundary;
     Adafruit_SSD1306* _display;
 };
 
 
 //------------------------------------------------------------------------------------------------
+
+enum {
+  kScrolling,
+  kPaused
+} ScreenState;
 
 ScreenLine::ScreenLine()
 {
@@ -58,17 +59,26 @@ void ScreenLine::init(Adafruit_SSD1306* display,int placememnt,const String& tex
   _display = display;
   _width = CHAR_PIXEL_SIZE * 2 * _text.length(); // 12 = 6 pixels/character * text size 2
   _scrollPosition    = _display->width();
+  _leftBoundary = _display->width() - _width;
 }
 
-void ScreenLine::update()
+bool ScreenLine::render()
 {
-    _display->setCursor(_scrollPosition, 20);
+    _display->setCursor(_scrollPosition, _placement);
     _display->print(_text);
-    _scrollPosition -= VELOCITY;
-    if(_scrollPosition < -_width)
-      _scrollPosition = _display->width();
+    return (_scrollPosition <= _leftBoundary);
 }
 
+bool ScreenLine::advance()
+{
+    _scrollPosition = max(_scrollPosition-VELOCITY,_leftBoundary);
+    return (_scrollPosition <= _leftBoundary);
+}
+
+void ScreenLine::reset()
+{
+      _scrollPosition = _display->width();  
+}
 //------------------------------------------------------------------------------------------------
 //************************************************************************************************
 //------------------------------------------------------------------------------------------------
@@ -78,6 +88,7 @@ ScreenDriver::ScreenDriver()
 ,_lines(NULL)
 ,_messages(NULL)
 ,_lineCount(0)
+,_messageCount(0)
 {}
 
 ScreenDriver::~ScreenDriver() 
@@ -101,14 +112,13 @@ void ScreenDriver::init(void) {
 
 void ScreenDriver::parse(const String& msg) {
   
-  Particle.publish(String("parsing"));
 
   delete [] _messages; _messages  = NULL;
-  delete [] _lines; _lines = NULL;
 
 
-  int stop = msg.indexOf('\t');
-  int msgCount = atoi(msg.substring(0,stop));
+  int stop = msg.indexOf('\t',1);
+  int msgCount = _messageCount = atoi(msg.substring(0,stop));
+  Particle.publish(String("parsing messages"),msg.substring(0,stop));
 
   _messages = new Message[msgCount];
 
@@ -120,17 +130,27 @@ void ScreenDriver::parse(const String& msg) {
     stop = msg.indexOf('\t',start);
     _messages[i].sender = msg.substring(start,stop);
     start = stop+1;
-//    setText(_messages[i].subject);
+    //setText(_messages[i].subject);
   }
-  _lines = new ScreenLine[1];
-  Particle.publish(String("parsed: ") + _messages[0].subject);
 
-  _lines[0].init(_display,20,_messages[0].subject);
-  _lineCount = 1;
-
+  displayMessage(0);
   bool state = getState();
   setState(false);
   setState(state);
+}
+
+void ScreenDriver::displayMessage(int msgIdx) {
+  delete [] _lines; 
+  _lines = NULL;
+  if(msgIdx < _messageCount) {
+    _lineCount = 2;  
+    _lines = new ScreenLine[_lineCount];
+    _lines[0].init(_display,20,_messages[msgIdx].subject);
+    _lines[1].init(_display,40,_messages[msgIdx].sender);
+    _currentMessage = msgIdx;
+    _state = kScrolling;
+  debug("displaying message %d:%s",msgIdx,(const char*)_messages[msgIdx].sender);
+  }
 }
 
 void ScreenDriver::setState(bool on) {
@@ -142,12 +162,32 @@ void ScreenDriver::setState(bool on) {
   }
 
 }
+void ScreenDriver::nextMessage() {
+  if(_messageCount > 0)
+    displayMessage((_currentMessage+1)% _messageCount);
+}
+
 void ScreenDriver::pump() {
   _display->clearDisplay();
   if(_on) {
-    for(int i=0;i<_lineCount;i++)
-    {
-      _lines[i].update();
+    for(int i=0;i<_lineCount;i++) {
+      _lines[i].render();
+    }
+    if (_state == kScrolling) {
+      bool finished = true;
+      for(int i=0;i<_lineCount;i++) {
+        finished = _lines[i].advance() && finished;
+      }
+      if(finished) {
+        _state = kPaused;
+        _pauseTime = millis();
+      }
+    }
+    else if(_state == kPaused) {
+      int t = millis();
+      if(t - _pauseTime > kPauseTime) {
+        nextMessage();
+      }
     }
   }
   _display->display();
