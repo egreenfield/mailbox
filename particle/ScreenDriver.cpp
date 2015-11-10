@@ -161,10 +161,10 @@ void ScreenDriver::displayMessage(int msgIdx) {
     char buf[256];
     sprintf(buf,"%d/%d",msgIdx+1,_messageCount);
     _lines[0].init(_display,8,kAlignment_Left,String(buf));
-    _lines[1].init(_display,8,kAlignment_Right,String("from"));
-    _lines[2].init(_display,16,kAlignment_Scrolling,_messages[msgIdx].sender);
-    _lines[3].init(_display,39,kAlignment_Right,String("subject"));
-    _lines[4].init(_display,50,kAlignment_Scrolling,(_messages[msgIdx].subject.length() == 0)? "(blank)":_messages[msgIdx].subject);
+    _lines[1].init(_display,16,kAlignment_Right,String("from"));
+    _lines[2].init(_display,26,kAlignment_Scrolling,_messages[msgIdx].sender);
+    _lines[3].init(_display,42,kAlignment_Right,String("subject"));
+    _lines[4].init(_display,52,kAlignment_Scrolling,(_messages[msgIdx].subject.length() == 0)? "(blank)":_messages[msgIdx].subject);
     _currentMessage = msgIdx;
     _state = kScrolling;
   debug("displaying message %d:%s",msgIdx,(const char*)_messages[msgIdx].sender);

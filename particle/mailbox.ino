@@ -8,7 +8,7 @@ const int servoPin = A4;
 int buttonState = 0;
 int previousButtonState = 0;
 unsigned long startTime = 0;
-unsigned long PING_TIMEOUT = 20*1000;
+unsigned long PING_TIMEOUT = 60*1000;
 String _message;
 
 ScreenDriver screen;
