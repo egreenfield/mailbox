@@ -18,6 +18,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 static const int kPauseTime = 2000;
 
 
+typedef enum {
+  kAlignment_Left,
+  kAlignment_Right,
+  kAlignment_Scrolling
+} Alignment;
 //------------------------------------------------------------------------------------------------
 //************************************************************************************************
 //------------------------------------------------------------------------------------------------
@@ -26,7 +31,7 @@ class ScreenLine
 {
 public:
   ScreenLine();  
-  void init(Adafruit_SSD1306* display, int placement,const String& text);
+  void init(Adafruit_SSD1306* display, int placement,Alignment align, const String& text);
   bool render();
   bool advance();
   void reset();
@@ -37,6 +42,7 @@ private:
     int _placement;
     int _scrollPosition;
     int _leftBoundary;
+    Alignment _align;
     Adafruit_SSD1306* _display;
 };
 
@@ -52,13 +58,17 @@ ScreenLine::ScreenLine()
 {
 }
 
-void ScreenLine::init(Adafruit_SSD1306* display,int placememnt,const String& text)
+void ScreenLine::init(Adafruit_SSD1306* display,int placememnt,Alignment align,const String& text)
 {
   _text = text;
   _placement = placememnt;
+  _align = align;
   _display = display;
   _width = CHAR_PIXEL_SIZE * 2 * _text.length(); // 12 = 6 pixels/character * text size 2
-  _scrollPosition    = _display->width();
+  _scrollPosition    =  (_align == kAlignment_Left)? 0                            :
+                        (_align == kAlignment_Right)? _display->width() - _width  :
+                        (_align == kAlignment_Scrolling)? _display->width()       :
+                        0;
   _leftBoundary = _display->width() - _width;
 }
 
@@ -71,8 +81,11 @@ bool ScreenLine::render()
 
 bool ScreenLine::advance()
 {
-    _scrollPosition = max(_scrollPosition-VELOCITY,_leftBoundary);
-    return (_scrollPosition <= _leftBoundary);
+    if(_align == kAlignment_Scrolling) {
+      _scrollPosition = max(_scrollPosition-VELOCITY,_leftBoundary);
+      return (_scrollPosition <= _leftBoundary);
+    }
+    return true;
 }
 
 void ScreenLine::reset()
@@ -143,10 +156,15 @@ void ScreenDriver::displayMessage(int msgIdx) {
   delete [] _lines; 
   _lines = NULL;
   if(msgIdx < _messageCount) {
-    _lineCount = 2;  
+    _lineCount = 5;  
     _lines = new ScreenLine[_lineCount];
-    _lines[0].init(_display,20,_messages[msgIdx].subject);
-    _lines[1].init(_display,40,_messages[msgIdx].sender);
+    char buf[256];
+    sprintf(buf,"%d/%d",msgIdx+1,_messageCount);
+    _lines[0].init(_display,8,kAlignment_Left,String(buf));
+    _lines[1].init(_display,8,kAlignment_Right,String("from"));
+    _lines[2].init(_display,16,kAlignment_Scrolling,_messages[msgIdx].sender);
+    _lines[3].init(_display,39,kAlignment_Right,String("subject"));
+    _lines[4].init(_display,50,kAlignment_Scrolling,(_messages[msgIdx].subject.length() == 0)? "(blank)":_messages[msgIdx].subject);
     _currentMessage = msgIdx;
     _state = kScrolling;
   debug("displaying message %d:%s",msgIdx,(const char*)_messages[msgIdx].sender);

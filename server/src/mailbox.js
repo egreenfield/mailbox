@@ -142,6 +142,11 @@ function listUnreadEmail(callback) {
 function cleanTabs(str) {
   return str.replace("\t"," ");
 }
+
+function extractName(from) {
+  return from.match(/(.*)\s+<.*>$/)[1];  
+}
+
 function updateFlag(callback) {
   console.log("updating flag");
   var method;
@@ -156,7 +161,7 @@ function updateFlag(callback) {
         method = "setMessage";
         response = "" + digest.length + "\t";
         response = _.reduce(digest,function(response,message) {
-          return response + message.Subject + "\t" + message.From + "\t";
+          return response + message.Subject + "\t" + extractName(message.From) + "\t";
         },response) + '\t\t\t';
         callback();
       }
