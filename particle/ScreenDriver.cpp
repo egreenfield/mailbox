@@ -3,6 +3,7 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
 #include "util.h"
+#include "MessageParser.h"
 
 #define OLED_RESET D4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -107,7 +108,6 @@ ScreenDriver::ScreenDriver()
 ScreenDriver::~ScreenDriver() 
 {
   delete [] _lines;
-  delete [] _messages;
 }
 
 void ScreenDriver::init(void) {
@@ -123,28 +123,13 @@ void ScreenDriver::init(void) {
   _display->setTextWrap(false);
 }
 
-void ScreenDriver::parse(const String& msg) {
+void ScreenDriver::setMessages(int msgCount, Message* messages) {
   
 
-  delete [] _messages; _messages  = NULL;
+  _messages  = messages;
 
 
-  int stop = msg.indexOf('\t',1);
-  int msgCount = _messageCount = atoi(msg.substring(0,stop));
-  Particle.publish(String("parsing messages"),msg.substring(0,stop));
-
-  _messages = new Message[msgCount];
-
-  int start = stop+1;
-  for(int i=0;i<msgCount;i++) {
-    stop = msg.indexOf('\t',start);
-    _messages[i].subject = msg.substring(start,stop);
-    start = stop+1;
-    stop = msg.indexOf('\t',start);
-    _messages[i].sender = msg.substring(start,stop);
-    start = stop+1;
-    //setText(_messages[i].subject);
-  }
+  _messageCount = msgCount;
 
   displayMessage(0);
   bool state = getState();
@@ -152,9 +137,11 @@ void ScreenDriver::parse(const String& msg) {
   setState(state);
 }
 
+
 void ScreenDriver::displayMessage(int msgIdx) {
   delete [] _lines; 
   _lines = NULL;
+  _lineCount = 0;
   if(msgIdx < _messageCount) {
     _lineCount = 5;  
     _lines = new ScreenLine[_lineCount];

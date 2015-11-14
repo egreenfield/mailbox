@@ -55,6 +55,7 @@ exports.handler = function(event,context) {
   ],function(err) {
       console.log("completed with err:",err);
 //        context.done(err,JSON.stringify(digest));
+          console.log("response",response);
         context.done(err,{digest:response});
   })
 }
@@ -134,6 +135,7 @@ function listUnreadEmail(callback) {
           cb();
         })
       },function(err) {
+//        console.log(JSON.stringify(digest,null,2));
         return callback(err);
       });
     }
@@ -149,31 +151,21 @@ function extractName(from) {
 
 function updateFlag(callback) {
   console.log("updating flag");
-  var method;
-
 
   spark.login({accessToken: DEVICE_ACCESS_TOKEN},function(err) {
     if(err) return callback(err);
     spark.getDevice(DEVICE_ID, function(err, device) {
       if(err) return callback(err);
 
+      response = "" + digest.length + "\t";
       if(digest.length) {
-        method = "setMessage";
-        response = "" + digest.length + "\t";
         response = _.reduce(digest,function(response,message) {
-          return response + message.Subject + "\t" + extractName(message.From) + "\t";
-        },response) + '\t\t\t';
-        callback();
+          console.log("DT is",new Date(message.Date));
+          return response + message.Subject + "\t" + extractName(message.From) + "\t" + new Date(message.Date).getTime() + "\t";
+        },response);
       }
-      else {
-        response = '\t\t\t';
-        device.callFunction("clearSignal","",function(err) {
-          if(err) return callback(err);
-          console.log("success with",method);
-          callback();
-        })
-      }
-
+      response += '\t\t\t';
+      callback();
     });
   });
 }

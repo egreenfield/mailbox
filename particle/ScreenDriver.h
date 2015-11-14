@@ -4,14 +4,10 @@
 #include "application.h"
 
 class String;
+class Message;
 class ScreenLine;
 class Adafruit_SSD1306;
 
-struct Message
-{
-  String subject;
-  String sender;
-};
 
 //------------------------------------------------------------------------------------------------
 //************************************************************************************************
@@ -22,7 +18,7 @@ public:
   ScreenDriver();
   ~ScreenDriver();
 
-  void parse(const String& text);
+  void setMessages(int messageCount,Message* messages);
   void init();
   void pump();
   void setState(bool on);

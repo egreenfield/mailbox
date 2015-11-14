@@ -1,4 +1,5 @@
 #include "ScreenDriver.h"
+#include "MessageParser.h"
 Servo myservo;  // create servo object to control a servo
 
 int ledPin = D7; // Instead of writing D7 over and over again, we'll write led2
@@ -8,18 +9,15 @@ const int servoPin = A4;
 int buttonState = 0;
 int previousButtonState = 0;
 unsigned long startTime = 0;
-unsigned long PING_TIMEOUT = 60*1000;
+unsigned long PING_TIMEOUT = 20*1000;
 String _message;
 
 ScreenDriver screen;
+MessageParser parser;
 void setup()
 {
     Particle.publish("setup begin");
-//    Particle.function("setSignal", setSignalP);
     Particle.function("clearSignal", clearSignalP);
-    Particle.function("endMsg", finishMessageP);
-    Particle.function("clearMsg",clearMessageP);
-    Particle.function("appendMsg",appendMessageP);
 
     Particle.subscribe("hook-response/ping-mailbox", mailboxPingResponse, MY_DEVICES);
 
@@ -31,7 +29,7 @@ void setup()
 
     screen.init();
     setFlag(false);
-    startTime = millis() - PING_TIMEOUT;
+    startTime = 0;
 }
 
 void loop()
@@ -74,21 +72,14 @@ void clearMessage()
   _message = "";
 }
 
-void appendMessage(const String& message)
-{
-  _message.concat(message);
-}
-
-void finishMessage()
-{
-  Particle.publish("finishing message",_message);
-  screen.parse(_message);
-}
-void setMessage(const String& m)
-{
-    clearMessage();
-    appendMessage(m);
-    finishMessage();
+void finishMessage() {
+    parser.parse(_message);
+    screen.setMessages(parser.messageCount(),parser.messages());
+    Particle.publish("ending_response");
+    if(parser.messageCount() > 0)
+      setFlag(true);  
+    else
+      setFlag(false);  
 }
 
 void mailboxPingResponse(const char * name,const char * data)
@@ -102,39 +93,17 @@ void mailboxPingResponse(const char * name,const char * data)
   }
 
   String fragment(data);
-  appendMessage(fragment);
+  _message.concat(fragment);
   Particle.publish("appending_response",fragment);
   if(fragment.endsWith("\t\t\t"))
   {
-    screen.parse(_message);
-    Particle.publish("ending_response");
-
-    setFlag(true);
+    finishMessage();
   }
 }
 
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-int appendMessageP(String message) {
-  Particle.publish("append message: ",message);
-  appendMessage(message);
-  return 0;
-}
-
-int clearMessageP(String param) {
-  Particle.publish("clear message");
-  setFlag(true);
-  clearMessage();
-  return 0;
-}
-
-int finishMessageP(String param) {
-  Particle.publish("finish message",_message);
-  screen.parse(_message);
-  setFlag(true);
-  return 0;
-}
 int setSignalP(String count) {
     Particle.publish("set signal received");
     setFlag(true);
@@ -145,6 +114,7 @@ int setSignalP(String count) {
 int clearSignalP(String s) {
     Particle.publish("clear signal received");
     setFlag(false);
-    setMessage("");
+    clearMessage();
+    finishMessage();
     return 0;
 }
