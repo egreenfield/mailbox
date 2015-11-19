@@ -24,6 +24,8 @@ public:
   void setState(bool on);
   bool getState() {return _on;}
   Message* getMessages() { return _messages; } 
+  void alertNoMessages();
+  void displayAlert(const String& alertMessage);
 private:
   void displayMessage(int msgIdx);
   void nextMessage();

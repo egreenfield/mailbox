@@ -22,6 +22,7 @@ static const int kPauseTime = 2000;
 typedef enum {
   kAlignment_Left,
   kAlignment_Right,
+  kAlignment_Center,
   kAlignment_Scrolling
 } Alignment;
 //------------------------------------------------------------------------------------------------
@@ -67,6 +68,7 @@ void ScreenLine::init(Adafruit_SSD1306* display,int placememnt,Alignment align,c
   _display = display;
   _width = CHAR_PIXEL_SIZE * 2 * _text.length(); // 12 = 6 pixels/character * text size 2
   _scrollPosition    =  (_align == kAlignment_Left)? 0                            :
+                        (_align == kAlignment_Center)? _display->width()/2 - _width/2  :
                         (_align == kAlignment_Right)? _display->width() - _width  :
                         (_align == kAlignment_Scrolling)? _display->width()       :
                         0;
@@ -131,10 +133,24 @@ void ScreenDriver::setMessages(int msgCount, Message* messages) {
 
   _messageCount = msgCount;
 
-  displayMessage(0);
+  if (_messageCount == 0) {
+    alertNoMessages();
+  } else {
+    displayMessage(0);
+  }
   bool state = getState();
   setState(false);
   setState(state);
+}
+
+void ScreenDriver::alertNoMessages() {
+  displayAlert("No Messages");
+}
+void ScreenDriver::displayAlert(const String& msg) {
+  delete [] _lines;
+  _lineCount = 1;
+  _lines = new ScreenLine[_lineCount];
+  _lines[0].init(_display,26,kAlignment_Center,msg);
 }
 
 
@@ -167,8 +183,12 @@ void ScreenDriver::setState(bool on) {
 
 }
 void ScreenDriver::nextMessage() {
+
   if(_messageCount > 0)
     displayMessage((_currentMessage+1)% _messageCount);
+  else 
+    alertNoMessages();
+
 }
 
 void ScreenDriver::pump() {
