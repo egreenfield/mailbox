@@ -154,7 +154,6 @@ void ScreenDriver::displayMessage(int msgIdx) {
     _lines[4].init(_display,52,kAlignment_Scrolling,(_messages[msgIdx].subject.length() == 0)? "(blank)":_messages[msgIdx].subject);
     _currentMessage = msgIdx;
     _state = kScrolling;
-  debug("displaying message %d:%s",msgIdx,(const char*)_messages[msgIdx].sender);
   }
 }
 

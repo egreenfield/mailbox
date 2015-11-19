@@ -161,7 +161,7 @@ function updateFlag(callback) {
       if(digest.length) {
         response = _.reduce(digest,function(response,message) {
           console.log("DT is",new Date(message.Date));
-          return response + message.Subject + "\t" + extractName(message.From) + "\t" + new Date(message.Date).getTime() + "\t";
+          return response + message.Subject + "\t" + extractName(message.From) + "\t" + (new Date(message.Date).getTime()) + "\t";
         },response);
       }
       response += '\t\t\t';

@@ -3,14 +3,21 @@
 
 Button::Button(int pin)
 : _pin(pin) 
-, _on(false)
+, _state(false)
 , _counter(0)
+, _changed(false)
 {
-  if(pin >= 0)
+}
+
+void Button::init(int pin) {
+  if (pin >= 0)
+    _pin = pin;
+
+  if(_pin >= 0)
     pinMode(_pin, INPUT);
 }
 
-int debounce_count = 10; // number of millis/samples to consider before declaring a debounced input
+int debounce_count = 2; // number of millis/samples to consider before declaring a debounced input
 
 
 void Button::poll()
@@ -18,7 +25,8 @@ void Button::poll()
   // If we have gone on to the next millisecond
   if(millis() != _lastSampleTime)
   {
-    _readValue = digitalRead(inPin);
+    _changed = false;
+    _readValue = digitalRead(_pin);
 
     if(_readValue == _state && _counter > 0)
     {
@@ -33,7 +41,8 @@ void Button::poll()
     {
       _counter = 0;
       _state = _readValue;
+      _changed = true;
     }
-    time = millis();
+    _lastSampleTime = millis();
   }
 }
