@@ -8,8 +8,10 @@ var gmail = google.gmail('v1');
 var AWS = require('aws-sdk');
 var spark = require('spark');
 
+
+var config;
+var accounts;
 var googleAuthInstance;
-var previousDigest;
 var digest;
 var response;
 var credentials;
@@ -87,7 +89,8 @@ function loadAccounts(callback) {
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) return callback(null);
-    accounts = JSON.parse(token).accounts;
+    config = JSON.parse(token);
+    accounts = config.accounts;
     callback();
   });
 }
@@ -118,15 +121,19 @@ function getMessageDetails(auth,message,callback) {
 function listUnreadEmail(callback) {
   console.log("listing unread email");
   digest = [];
-  async.each(accounts,listGoogleEmail,function(err) {
+  async.map(accounts,listGoogleEmail,function(err,messagesByAccount) {
+    if(err) return callback(err);
+    _.each(messagesByAccount,function(msgList) { digest = digest.concat(msgList);});
     return callback(err);
-  })
+  });
 }
 
 function listGoogleEmail(account,callback) {
+  console.log("listing for",account.nickname);
   var clientSecret = credentials.installed.client_secret;
   var clientId = credentials.installed.client_id;
   var redirectUrl = credentials.installed.redirect_uris[0];
+  var results = [];
 
   var oauth2Client = new googleAuthInstance.OAuth2(clientId, clientSecret, redirectUrl);
   oauth2Client.credentials = account;
@@ -140,15 +147,15 @@ function listGoogleEmail(account,callback) {
     var messages = response.messages;
     if (messages == null || messages.length == 0) {
       console.log('No messages found.');
-      return callback();
+      return callback(null,results);
     } else {
       async.each(messages,function(m,cb) {
         getMessageDetails(oauth2Client,m,function(err,full) {
-          digest.push(full);
+          results.push(full);
           cb();
         })
       },function(err) {
-        return callback(err);
+        return callback(err,results);
       });
     }
   });
@@ -156,8 +163,8 @@ function listGoogleEmail(account,callback) {
 }
 
 function filterEmail(callback) {
-  blacklist = accounts[0].blacklist;
-  if(blacklist) {
+  blacklist = config.blacklist;
+  if(blacklist && blacklist.length) {
     blacklist = _.map(blacklist,function(exp) {return new RegExp(exp);});
     digest = _.filter(digest,function(element) {
       var blacklistMatch = _.find(blacklist,function(pattern) {
@@ -166,8 +173,8 @@ function filterEmail(callback) {
       return(!blacklistMatch);
     });    
   }
-  whitelist = accounts[0].whitelist;
-  if(whitelist) {
+  whitelist = config.whitelist;
+  if(whitelist && whitelist.length) {
     whitelist = _.map(whitelist,function(exp) {return new RegExp(exp);});
     digest = _.filter(digest,function(element) {
       var whitelistMatch = _.find(whitelist,function(pattern) {

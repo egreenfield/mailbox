@@ -13,7 +13,7 @@ const char * kTerminator = "\t\t\t";
 
 
 unsigned long startTime = 0;
-unsigned long PING_TIMEOUT = 20*1000;
+unsigned long PING_INTERVAL_SECONDS = 60*1;
 unsigned long long lastReadTime = 0;
 String _message;
 Button doorSwitch(buttonPin);
@@ -55,7 +55,7 @@ void loop()
 
 void tryToPingServer() {
     unsigned long currentTime = millis();
-    if(currentTime - startTime > PING_TIMEOUT) {
+    if(currentTime - startTime > PING_INTERVAL_SECONDS * 1000) {
         startTime = currentTime;
         Spark.publish("ping-mailbox");
 
