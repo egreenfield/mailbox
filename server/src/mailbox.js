@@ -86,7 +86,7 @@ function loadGoogleTokens(callback) {
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) return callback(null);
-    oauth2Client.credentials = JSON.parse(token);
+    oauth2Client.credentials = JSON.parse(token).accounts[0];
     auth = oauth2Client;
     callback();
   });
