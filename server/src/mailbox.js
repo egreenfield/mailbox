@@ -5,10 +5,10 @@ var googleAuth = require('google-auth-library');
 var async = require('async');
 var _ = require('underscore');
 var gmail = google.gmail('v1');
-var auth;
 var AWS = require('aws-sdk');
 var spark = require('spark');
 
+var googleAuthInstance;
 var previousDigest;
 var digest;
 var response;
@@ -48,15 +48,15 @@ exports.handler = function(event,context) {
 
   async.series([
     loadClientSecrets,
-    loadGoogleTokens,
-//    loadPreviousDigest,
+    loadProviders,
+    loadAccounts,
     listUnreadEmail,
-    updateFlag,
+    filterEmail,
+    extractTokens,
   ],function(err) {
-      console.log("completed with err:",err);
-//        context.done(err,JSON.stringify(digest));
-          console.log("response",response);
-        context.done(err,{digest:response});
+    console.log("completed with err:",err);
+    console.log("response",response);
+    context.done(err,{digest:response});
   })
 }
 
@@ -68,6 +68,12 @@ function loadClientSecrets(callback) {
     callback();
   });
 }
+
+function loadProviders(callback) {
+  googleAuthInstance = new googleAuth();
+  callback();  
+}
+
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -75,25 +81,19 @@ function loadClientSecrets(callback) {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function loadGoogleTokens(callback) {
-  console.log("loading tokens");
-  var clientSecret = credentials.installed.client_secret;
-  var clientId = credentials.installed.client_id;
-  var redirectUrl = credentials.installed.redirect_uris[0];
-  auth = new googleAuth();
-  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+function loadAccounts(callback) {
+  console.log("loading google provider");
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) return callback(null);
-    oauth2Client.credentials = JSON.parse(token).accounts[0];
-    auth = oauth2Client;
+    accounts = JSON.parse(token).accounts;
     callback();
   });
 }
 
 
-function getMessageDetails(message,callback) {
+function getMessageDetails(auth,message,callback) {
   gmail.users.messages.get({
     auth:auth,
     userId:"me",
@@ -117,30 +117,69 @@ function getMessageDetails(message,callback) {
  */
 function listUnreadEmail(callback) {
   console.log("listing unread email");
+  digest = [];
+  async.each(accounts,listGoogleEmail,function(err) {
+    return callback(err);
+  })
+}
+
+function listGoogleEmail(account,callback) {
+  var clientSecret = credentials.installed.client_secret;
+  var clientId = credentials.installed.client_id;
+  var redirectUrl = credentials.installed.redirect_uris[0];
+
+  var oauth2Client = new googleAuthInstance.OAuth2(clientId, clientSecret, redirectUrl);
+  oauth2Client.credentials = account;
+
   gmail.users.messages.list({
-    auth: auth,
+    auth: oauth2Client,
     userId: 'me',
     q:"in:inbox is:unread -category:(promotions OR social)"
   }, function(err, response) {
     if (err) return callback(err);
     var messages = response.messages;
-    digest = [];
     if (messages == null || messages.length == 0) {
       console.log('No messages found.');
       return callback();
     } else {
       async.each(messages,function(m,cb) {
-        getMessageDetails(m,function(err,full) {
+        getMessageDetails(oauth2Client,m,function(err,full) {
           digest.push(full);
           cb();
         })
       },function(err) {
-//        console.log(JSON.stringify(digest,null,2));
         return callback(err);
       });
     }
   });
+
 }
+
+function filterEmail(callback) {
+  blacklist = accounts[0].blacklist;
+  if(blacklist) {
+    blacklist = _.map(blacklist,function(exp) {return new RegExp(exp);});
+    digest = _.filter(digest,function(element) {
+      var blacklistMatch = _.find(blacklist,function(pattern) {
+        return element.From.match(pattern);
+      });
+      return(!blacklistMatch);
+    });    
+  }
+  whitelist = accounts[0].whitelist;
+  if(whitelist) {
+    whitelist = _.map(whitelist,function(exp) {return new RegExp(exp);});
+    digest = _.filter(digest,function(element) {
+      var whitelistMatch = _.find(whitelist,function(pattern) {
+        return element.From.match(pattern);
+      });
+      return(whitelistMatch);
+    });    
+  }
+  callback();
+}
+
+
 function cleanTabs(str) {
   return str.replace("\t"," ");
 }
@@ -149,38 +188,19 @@ function extractName(from) {
   return from.match(/(.*)\s+<.*>$/)[1];  
 }
 
-function updateFlag(callback) {
+function extractTokens(callback) {
   console.log("updating flag");
-
-  spark.login({accessToken: DEVICE_ACCESS_TOKEN},function(err) {
-    if(err) return callback(err);
-    spark.getDevice(DEVICE_ID, function(err, device) {
-      if(err) return callback(err);
-
-      response = "" + digest.length + "\t";
-      if(digest.length) {
-        response = _.reduce(digest,function(response,message) {
-          console.log("DT is",new Date(message.Date));
-          return response + message.Subject + "\t" + extractName(message.From) + "\t" + (new Date(message.Date).getTime()) + "\t";
-        },response);
-      }
-      response += '\t\t\t';
-      callback();
-    });
-  });
-}
-
-function loadPreviousDigest(callback) {
-  console.log("loading previous digest from S3");
-  var params = {Bucket: BUCKET_NAME, Key: S3_KEY_NAME};
-
-  var s3 = new AWS.S3();
-  s3.getObject(params,function(err,data) {
-    if(err) return callback(err);
-    console.log("got bucket back",data);
-    previousDigest = JSON.parse(data.body.toString());
-    console.log("previous digest is:",JSON.stringify(previousDigest));
-    callback();
-  });
-
+  var tokenList = [];
+  tokenList.push(digest.length);
+//  response = "" + digest.length + "\t";
+  if(digest.length) {
+    _.each(digest,function(message) {
+      tokenList.push(cleanTabs(message.Subject));
+      tokenList.push(cleanTabs(extractName(message.From)));
+      tokenList.push(new Date(message.Date).getTime());
+    },response);
+  }
+  tokenList.push('\t\t\t');
+  response = tokenList.join('\t');
+  callback();
 }
